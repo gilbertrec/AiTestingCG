@@ -54,4 +54,4 @@ if __name__ == '__main__':
 
     iterable = [x for y, x in df.iterrows()]
     print(f'to analyze: {len(iterable)} repos')
-    start_search(iterable,3)
+    start_search(iterable)
