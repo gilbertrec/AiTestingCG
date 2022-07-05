@@ -12,18 +12,23 @@ output_path = "Results/"
 
 def generate_callgraph(filename_list,project_name):
     cg_generator = CallGraphGenerator(filename_list, project_name)
-    cg = cg_generator.analyze()
-    print("------CallGraph------")
-    print(cg)
-    formatter = formats.Simple(cg_generator)
-    print("------Formatter------")
-    print(formatter.generate())
-    with open(output_path+project_name+".json", "w+") as f:
-        f.write(json.dumps(formatter.generate()))
+    try:
+        cg = cg_generator.analyze()
+        print("------CallGraph------")
+        print(cg)
+        formatter = formats.Simple(cg_generator)
+        print("------Formatter------")
+        print(formatter.generate())
+        with open(output_path + project_name + ".json", "w+") as f:
+            f.write(json.dumps(formatter.generate()))
+    except:
+        with open('analyze_error.csv', 'a')as error_log:
+            error_log.write(project_name + '\n')
+
 
 
 def analyze_project(project_name):
-        filename_list = glob.glob(path+project_name+"/**/*.py", recursive=True)
+        filename_list = glob.glob(path+project_name+"/**/*test*.py", recursive=True)
         generate_callgraph(filename_list,project_name)
 
 def scan_projects():
@@ -57,6 +62,7 @@ def remove_empty(d):
 
 def clean_results():
     filename_list = glob.glob(output_path + '*.json', recursive=True)
+    #os.remove('analyze_error.csv')
     for filename in filename_list:
         os.remove(filename)
 

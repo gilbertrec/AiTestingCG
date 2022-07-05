@@ -24,6 +24,14 @@ def __search(row,lock):
             return
     print(f'analyzed {repo_full_name}')
     print(f'saving {repo_full_name}')
+    with lock:
+        try:
+            cloned_log = pd.read_csv('cloned_log.csv')
+            cloned_log = cloned_log.append(row, ignore_index=True)
+            cloned_log.to_csv('cloned_log.csv', index=False)
+        except:
+            print(f'error saving {repo_full_name}')
+    print(f'saved {repo_full_name}')
     to_delete = "repos/" + repo_full_name.split("/")[0]
     return to_delete
 
@@ -46,6 +54,13 @@ if __name__ == '__main__':
     df = pd.read_csv('results.csv', delimiter=",")
     #filter
     df = df[df['count'] > 0]
+    if(os.path.exists('cloned_log.csv')):
+        cloned_log = pd.read_csv('cloned_log.csv', delimiter=",")
+        df = df[~df['repo_name'].isin(cloned_log['repo_name'])]
+        print(len(df))
+    else:
+        cloned_log = pd.DataFrame(columns=['repo_name', 'repo_url','test_framework','ml_libs','count'])
+        cloned_log.to_csv('cloned_log.csv', index=False)
     print("The size of results is "+str(len(df)))
 
     already_analyzed = None
