@@ -33,14 +33,24 @@ def analyze_project(project_name):
         generate_callgraph(filename_list,project_name)
 
 def scan_projects(max_workers=None):
+    writer_lock = Lock()
+    if(os.path.exists('analyze_log.txt')):
+        analyzed = open('analyze_log.txt', 'r').read().splitlines()
+        projects = [f for f in os.listdir(path) if f not in analyzed]
+    else:
+        projects = os.listdir(path)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for project in os.listdir(path):
-            print(project)
-            _ = executor.submit(__analyze_and_filter, project)
 
-def __analyze_and_filter(project):
+        for project in projects:
+            print(project)
+            _ = executor.submit(__analyze_and_filter,project,writer_lock)
+
+def __analyze_and_filter(project,lock):
     analyze_project(project)
     filter_call_graph(project)
+    with lock:
+        with open('analyze_log.txt', 'a')as log:
+            log.write(project + '\n')
 
 def filter_call_graph(project_name):
     filename_list = glob.glob(output_path + project_name + '.json', recursive=True)
@@ -72,5 +82,4 @@ def clean_results():
         os.remove(filename)
 
 if __name__ == "__main__":
-    clean_results()
     scan_projects()
