@@ -4,7 +4,8 @@ import json
 import glob
 import os
 #entry point e package da analizzare
-
+import concurrent.futures
+from threading import Lock
 
 path = "repos/"
 output_path = "Results/"
@@ -31,12 +32,16 @@ def analyze_project(project_name):
         filename_list = glob.glob(path+project_name+"/**/*test*.py", recursive=True)
         generate_callgraph(filename_list,project_name)
 
-def scan_projects():
-    for project in os.listdir(path):
-        print(project)
-        analyze_project(project)
-        filter_call_graph(project)
+def scan_projects(max_workers=None):
+    writer_lock = Lock()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for project in os.listdir(path):
+            print(project)
+            _ = executor.submit(analyze_and_filter, project, writer_lock)
 
+def analyze_and_filter(project):
+    analyze_project(project)
+    filter_call_graph(project)
 def filter_call_graph(project_name):
     filename_list = glob.glob(output_path + project_name + '.json', recursive=True)
     for filename in filename_list:
