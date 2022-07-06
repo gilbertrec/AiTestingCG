@@ -6,7 +6,7 @@ import os
 #entry point e package da analizzare
 
 
-path = "repos_filtered/"
+path = "repos/"
 output_path = "Results/"
 
 
