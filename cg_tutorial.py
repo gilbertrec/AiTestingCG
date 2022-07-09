@@ -37,6 +37,14 @@ def scan_projects(max_workers=None):
     if(os.path.exists('analyze_log.txt')):
         analyzed = open('analyze_log.txt', 'r').read().splitlines()
         projects = [f for f in os.listdir(path) if f not in analyzed]
+        df = pd.read_csv('results.csv')
+        df.dropna(subset=['ml_libs'],inplace=True)
+
+        df = df[df['count'] > 0]
+        print(df.shape)
+        #filter analysis for the dataset that has ml_libs
+        with open('results.csv', 'r') as results:
+            projects = [f for f in projects if f not in results.read().splitlines()]
     else:
         projects = os.listdir(path)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
