@@ -5,6 +5,7 @@ import glob
 import os
 #entry point e package da analizzare
 import concurrent.futures
+import pandas as pd
 from threading import Lock
 
 path = "repos/"
@@ -15,13 +16,13 @@ def generate_callgraph(filename_list,project_name):
     cg_generator = CallGraphGenerator(filename_list, project_name)
     try:
         cg = cg_generator.analyze()
-        print("------CallGraph------")
-        print(cg)
         formatter = formats.Simple(cg_generator)
-        print("------Formatter------")
-        print(formatter.generate())
+
         with open(output_path + project_name + ".json", "w+") as f:
             f.write(json.dumps(formatter.generate()))
+        del cg_generator
+        del cg
+        del formatter
     except:
         with open('analyze_error.csv', 'a')as error_log:
             error_log.write(project_name + '\n')
@@ -50,7 +51,6 @@ def scan_projects(max_workers=None):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
 
         for project in projects:
-            print(project)
             _ = executor.submit(__analyze_and_filter,project,writer_lock)
 
 def __analyze_and_filter(project,lock):
@@ -65,7 +65,6 @@ def filter_call_graph(project_name):
     for filename in filename_list:
         file_input = open(filename)
         json_obj = json.load(file_input)
-        print(filename)
         filtered_json = remove_empty(json_obj)
         filename_filtered = filename.replace(".json","")
         out_file = open(filename_filtered+"_filtered.json","w")
