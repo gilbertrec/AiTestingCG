@@ -36,22 +36,33 @@ def analyze_project(project_name):
 def scan_projects(max_workers=None):
     writer_lock = Lock()
     if(os.path.exists('analyze_log.txt')):
+        #filter by already analyzed projects
         analyzed = open('analyze_log.txt', 'r').read().splitlines()
         projects = [f for f in os.listdir(path) if f not in analyzed]
-        df = pd.read_csv('results.csv')
-        df.dropna(subset=['ml_libs'],inplace=True)
 
-        df = df[df['count'] > 0]
-        print(df.shape)
-        #filter analysis for the dataset that has ml_libs
         with open('results.csv', 'r') as results:
             projects = [f for f in projects if f not in results.read().splitlines()]
     else:
         projects = os.listdir(path)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+    #filter analysis based on ml_libs anc count of test
+    df = pd.read_csv('res_filt_ntest_csv.csv', delimiter=",")
+    df.dropna(subset=['ml_libs'], inplace=True)
+    df = df.query('count > 0')
+    # filter analysis by manual validation
+    df = df.query('to_filter == "YES" | to_filter == "Not Analyzed"')
+    print(df.shape)
 
-        for project in projects:
-            _ = executor.submit(__analyze_and_filter,project,writer_lock)
+    list = df['repo_name'].values.tolist()
+
+    #intersection of project to analyze and the filter dataframes
+    trimmed_list = []
+    for project in list:
+        trimmed_list.append(project.split('/')[0])
+    trimmed_list = set(trimmed_list).intersection(set(projects))
+    print(trimmed_list)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for project in trimmed_list:
+            _ = executor.submit(__analyze_and_filter,trimmed_list,writer_lock)
 
 def __analyze_and_filter(project,lock):
     analyze_project(project)
